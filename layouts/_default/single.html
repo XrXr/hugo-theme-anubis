@@ -21,10 +21,6 @@
         {{ partial "paginationPost.html" . }}
     {{ end }}
 
-    {{ if .Site.DisqusShortname }}
-        {{ template "_internal/disqus.html" . }}
-    {{ end }}
-
     {{ if .Site.Params.UtterancesRepo }}
         {{ partial "utterances.html" . }}
     {{ end }}
