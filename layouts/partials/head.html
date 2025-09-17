@@ -14,11 +14,19 @@
 <link rel="icon" type="image/png" href="{{ "favicon.png" | absURL }}">
 <link rel="apple-touch-icon-precomposed" href="{{ "favicon.png" | absURL }}">
 
-{{ partial "resource.html" (dict "context" . "type" "css" "filename" "css/main.css") }}
-
-{{ range .Site.Params.customCSS -}}
-  {{ partial "resource.html" (dict "context" $ "type" "css" "filename" . ) }}
+{{ $css_files := slice ("css/main.css") | append .Site.Params.customCSS }}
+{{ $css_resources := slice }}
+{{- range $css_files }}
+  {{- $css_resources = $css_resources | append (resources.Get . | resources.ExecuteAsTemplate "css/style.css" $) }}
 {{- end }}
+{{ $resource := $css_resources | resources.Concat "css/bundle.css" }}
+
+{{ if eq (getenv "HUGO_ENV") "production" | or (eq .Site.Params.env "production")  }}
+    {{ $resource = $resource | resources.Minify }}
+{{ end }}
+{{ $resource = $resource | resources.Fingerprint "sha256" }}
+
+<link rel="stylesheet" href="{{ $resource.Permalink }}" integrity="{{ $resource.Data.Integrity }}">
 
 {{ range .Site.Params.customJS -}}
   {{ partial "resource.html" (dict "context" $ "type" "js" "filename" . ) }}
