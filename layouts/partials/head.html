@@ -29,9 +29,7 @@
 {{ end }}
 {{ $resource := $css_resources | resources.Concat (add $key ".css") }}
 
-{{ if eq (getenv "HUGO_ENV") "production" | or (eq .Site.Params.env "production")  }}
-    {{ $resource = $resource | resources.Minify }}
-{{ end }}
+{{ $resource = $resource | resources.Minify }}
 {{ $resource = $resource | resources.Fingerprint "sha256" }}
 
 <link rel="stylesheet" href="{{ $resource.Permalink }}" integrity="{{ $resource.Data.Integrity }}">
