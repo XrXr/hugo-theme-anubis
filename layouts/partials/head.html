@@ -14,12 +14,20 @@
 <link rel="icon" type="image/png" href="{{ "favicon.png" | absURL }}">
 <link rel="apple-touch-icon-precomposed" href="{{ "favicon.png" | absURL }}">
 
+{{/* CSS bundling logic. One per page. */}}
 {{ $css_files := slice ("css/main.css") | append .Site.Params.customCSS }}
-{{ $css_resources := slice }}
+{{ $css_resources := slice | append (.Resources.Match "*.css") }}
 {{- range $css_files }}
-  {{- $css_resources = $css_resources | append (resources.Get . | resources.ExecuteAsTemplate "css/style.css" $) }}
+  {{- $css_resources = $css_resources | append (resources.Get . | resources.ExecuteAsTemplate . $) }}
 {{- end }}
-{{ $resource := $css_resources | resources.Concat "css/bundle.css" }}
+
+{{/* resources.Concat caches by the path given, so we hash the
+     contents to avoid false sharing*/}}
+{{ $key := "css/" }}
+{{ range $css_resources }}
+    {{ $key = (add $key .Content) | hash.XxHash }}
+{{ end }}
+{{ $resource := $css_resources | resources.Concat (add $key ".css") }}
 
 {{ if eq (getenv "HUGO_ENV") "production" | or (eq .Site.Params.env "production")  }}
     {{ $resource = $resource | resources.Minify }}
