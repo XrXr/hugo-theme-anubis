@@ -14,25 +14,19 @@
 <link rel="icon" type="image/png" href="{{ "favicon.png" | absURL }}">
 <link rel="apple-touch-icon-precomposed" href="{{ "favicon.png" | absURL }}">
 
-{{/* CSS bundling logic. One per page. */}}
+{{/* CSS bundling logic */}}
 {{ $css_files := slice ("css/main.css") | append .Site.Params.customCSS }}
 {{ $css_resources := slice | append (.Resources.Match "*.css") }}
 {{- range $css_files }}
   {{- $css_resources = $css_resources | append (resources.Get . | resources.ExecuteAsTemplate . $) }}
 {{- end }}
-
-{{/* resources.Concat caches by the path given, so we hash the
-     contents to avoid false sharing*/}}
-{{ $key := "css/" }}
-{{ range $css_resources }}
-    {{ $key = (add $key .Content) | hash.XxHash }}
-{{ end }}
-{{ $resource := $css_resources | resources.Concat (add $key ".css") }}
-
-{{ $resource = $resource | resources.Minify }}
-{{ $resource = $resource | resources.Fingerprint "sha256" }}
-
-<link rel="stylesheet" href="{{ $resource.Permalink }}" integrity="{{ $resource.Data.Integrity }}">
+{{/* CSS bundling logic */}}
+{{- $resource := $css_resources | resources.Concat "style.css" | resources.Minify }}
+<style>{{$resource.Content | safeCSS}}</style>
+{{ $css_size_limit := 0x10000 }}
+{{- if gt ($resource.Content | len) $css_size_limit }}
+  {{- warnf "%s: CSS bundle larger than 0x%x bytes, maybe too large to inline" templates.Current.Filename $css_size_limit }}
+{{- end -}}
 
 {{ range .Site.Params.customJS -}}
   {{ partial "resource.html" (dict "context" $ "type" "js" "filename" . ) }}
