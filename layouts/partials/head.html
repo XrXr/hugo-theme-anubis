@@ -16,17 +16,16 @@
 
 {{/* CSS bundling logic */}}
 {{ $css_files := slice ("css/main.css") | append .Site.Params.customCSS }}
-{{ $css_resources := slice | append (.Resources.Match "*.css") }}
+{{ $css_resources := .Resources.Match "*.css" }}
 {{- range $css_files }}
   {{- $css_resources = $css_resources | append (resources.Get . | resources.ExecuteAsTemplate . $) }}
 {{- end }}
-{{/* CSS bundling logic */}}
-{{- $resource := $css_resources | resources.Concat "style.css" | resources.Minify }}
-<style>{{$resource.Content | safeCSS}}</style>
-{{ $css_size_limit := 0x10000 }}
-{{- if gt ($resource.Content | len) $css_size_limit }}
-  {{- warnf "%s: CSS bundle larger than 0x%x bytes, maybe too large to inline" templates.Current.Filename $css_size_limit }}
-{{- end -}}
+
+{{/* Tried resources.Concat, something funky with mixing the types of resources
+makes it not miss part of the file. Just put a style tag for each file. */}}
+{{- range $css_resources }}
+  <style>{{(. | resources.Minify).Content | safeCSS}}</style>
+{{- end }}
 
 {{ range .Site.Params.customJS -}}
   {{ partial "resource.html" (dict "context" $ "type" "js" "filename" . ) }}
